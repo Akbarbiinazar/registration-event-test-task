@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "defaultMode": "plan",
+    "deny": [
+      "Bash(git push --force*)",
+      "Bash(git push -f*)",
+      "Bash(git push*--force*)",
+      "Bash(git commit*--amend*)",
+      "Bash(git rebase*)",
+      "Bash(git reset --hard*)",
+      "Edit(docs/ASSIGNMENT.md)",
+      "Write(docs/ASSIGNMENT.md)"
+    ]
+  }
+}

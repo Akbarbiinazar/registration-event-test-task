@@ -18,11 +18,9 @@
   на английском.
 - Тексты интерфейса и писем — на русском.
 
-## Стек
+## Нестандартное в стеке
 
-Node.js ≥ 22 + TypeScript, Fastify, `pg` (сырой SQL), React + Vite,
-PostgreSQL 16 и Mailpit в docker compose. npm workspaces: `apps/api`,
-`apps/web`.
+Без ORM: сырой SQL через `pg`. Postgres 16 и Mailpit — в docker compose, Postgres на хосте — порт `5433`.
 
 ## Команды
 
@@ -64,24 +62,25 @@ Mailpit UI: http://localhost:8025. Postgres на хосте: порт `5433`.
    коммитится вместе со слайсом.
 7. **История не переписывается:** без squash, без `rebase -i`, без
    `commit --amend` уже показанных коммитов, без `push --force`.
+8. **Правила после слайса.** После слайса предложить пользователю 1–3
+   правила или проверки (ESLint, `scripts/check-invariants.sh`,
+   `.claude/rules/`), закрывающие ошибки, найденные в слайсе; добавлять только
+   после одобрения.
 
 ## Запреты
 
-- Не пропускать тесты: никаких `.skip`, `.only`, `skipIf`, `runIf`, условных
-  `return` в тестах «если нет БД». Без Postgres тесты обязаны падать.
-- Не мокать Postgres в тестах поведения. Моки допустимы только для SMTP-транспорта.
-- Не ослаблять и не удалять тест, чтобы он прошёл. Если тест неверен —
-  объяснить почему и спросить.
-- Не использовать `Date.now()`, `new Date()` без аргументов и SQL `now()` в
-  доменном коде и задачах (`apps/api/src/domain`, `apps/api/src/jobs`) — только
-  `clock.now()`, время передаётся в SQL параметром.
+- Тесты: без skip/only и моков Postgres — `.claude/rules/tests.md`
+  (проверка: ESLint + `scripts/check-invariants.sh`).
+- Время в `domain` и `jobs` — только `clock.now()` — `.claude/rules/clock.md`
+  (проверка: ESLint + `scripts/check-invariants.sh`).
 - Не переносить в код инварианты, которые держит БД (см. `project_spec.md` §5):
   никаких «SELECT count, потом INSERT» вместо условного `UPDATE`/`ON CONFLICT`.
 - Каждое изменение состояния + постановка письма в outbox + `pg_notify` —
   в одной транзакции.
 - Не подключать ORM и query builder. Новая зависимость — только с причиной,
   записанной в DEVLOG.
-- Не редактировать применённые миграции — только новая миграция.
+- Применённые миграции не редактируются — `.claude/rules/migrations.md`
+  (проверка: `scripts/check-invariants.sh`).
 - Не использовать `any` и `@ts-ignore`; `eslint-disable` — только построчно и
   с комментарием-причиной.
 - Не коммитить `.env`, секреты, `node_modules`, артефакты сборки.

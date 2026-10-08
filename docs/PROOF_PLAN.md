@@ -177,3 +177,8 @@
 | 02 | Организаторский эндпоинт без/с чужим ключом → 401 | `events.test.ts` | Зелёные (2026-10-08 15:24) |
 | 02 | `capacity = 0` и `seats_taken > capacity` → `check_violation` | `events-schema.test.ts` | Зелёные (2026-10-08 15:24) |
 | 02 | Время в поясе события с подписью зоны | `format.test.ts`, `events.test.ts`, `e2e/create-event.spec.ts` (18:00 введено = 18:00 на обеих страницах) | Зелёные (2026-10-08 15:24) |
+| 03 | P1: одно место и одно письмо при повторах, включая 10 параллельных | `apps/api/test/proofs/p1-registration.proof.test.ts`, `assertInvariants()` | Сначала 404 (ожидаемый красный), затем 1 passed (2026-10-08 16:41) |
+| 03 | Ограничения БД, регистрация после начала, код только по секретной ссылке | `apps/api/test/registrations.test.ts` | 4 passed; прямой дубль → `23505`, верхний регистр email → `23514` (2026-10-08 16:46) |
+| 03 | Отправщик: успех, backoff, `Message-ID`, параллельные тики | `apps/api/test/mailer.test.ts` | 3 passed (2026-10-08 16:46) |
+| 03 | Регистрация в UI → письмо Mailpit → билет; повтор без второго письма | `e2e/registration-ticket.spec.ts` | Зелёный, `npm run test:e2e`: 5 passed (2026-10-08 16:55) |
+| 03 | Реальная SMTP-доставка из API в Mailpit | `bash scripts/smoke.sh` | Письмо найдено через API Mailpit (2026-10-08 16:56) |

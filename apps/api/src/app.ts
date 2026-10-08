@@ -5,6 +5,7 @@ import type { Db } from './db.js';
 import { registerErrorHandling } from './errors.js';
 import { registerEventsRoutes } from './modules/events/events.controller.js';
 import { registerHealthRoutes } from './modules/health/health.controller.js';
+import { registerRegistrationRoutes } from './modules/registrations/registrations.controller.js';
 
 export interface Deps {
   db: Db;
@@ -21,6 +22,7 @@ export function buildApp(deps: Deps): FastifyInstance {
   void app.register(registerHealthRoutes(deps), { prefix: '/api' });
 
   void app.register(registerEventsRoutes(deps), { prefix: '/api' });
+  void app.register(registerRegistrationRoutes(deps), { prefix: '/api' });
 
   return app;
 }

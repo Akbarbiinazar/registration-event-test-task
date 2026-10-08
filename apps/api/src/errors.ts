@@ -22,6 +22,7 @@ const FIELD_MESSAGES: Readonly<Record<string, string>> = {
   startsAt: 'Укажите дату и время начала',
   timezone: 'Не удалось определить часовой пояс',
   capacity: 'Количество мест: целое число от 1 до 10 000',
+  email: 'Укажите корректный email',
 };
 
 function body(code: string, message: string): ApiErrorBody {

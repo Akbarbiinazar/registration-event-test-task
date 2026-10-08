@@ -319,9 +319,12 @@ outbox_emails
 
 ## 6. Архитектура backend (кратко)
 
-- `domain/*` — функции вида `register(deps, input)`, `deps = { db, clock, config }`.
-  Каждая — одна транзакция: блокировка события (если операция пишет по событию)
-  → изменение состояния → outbox → `pg_notify`.
+- `modules/*` — граница `controller → service → repository`: контроллер
+  валидирует HTTP и задаёт контракт, сервис содержит доменную операцию вида
+  `register(deps, input)`, repository выполняет SQL. Это согласовано для
+  слайса 03, чтобы продолжить структуру уже реализованных модулей 01–02.
+  Каждая операция изменения состояния — одна транзакция: блокировка события
+  (если операция пишет по событию) → изменение состояния → outbox → `pg_notify`.
 - `Clock { now(): Date }`: `SystemClock` в проде, `FakeClock` (`set`, `advance`)
   в тестах. Время передаётся в SQL параметром `$now`.
 - `jobs/reminders.ts` — `runReminderTick(deps)`; `setInterval` только в

@@ -16,6 +16,11 @@ const ConfigSchema = Type.Object({
     pattern: '^postgres(ql)?://',
     default: 'postgres://events:events@localhost:5433/events_test',
   }),
+  WEB_BASE_URL: Type.String({ pattern: '^https?://', default: 'http://localhost:5173' }),
+  SMTP_HOST: Type.String({ minLength: 1, default: '127.0.0.1' }),
+  SMTP_PORT: Type.Integer({ minimum: 1, maximum: 65535, default: 1025 }),
+  MAIL_FROM: Type.String({ minLength: 1, default: 'Билеты <tickets@events.local>' }),
+  MAILER_TICK_MS: Type.Integer({ minimum: 100, default: 1000 }),
 });
 
 export type Config = Static<typeof ConfigSchema>;
@@ -28,7 +33,8 @@ export function loadConfig(env: Record<string, string | undefined> = process.env
   for (const key of Object.keys(ConfigSchema.properties)) {
     const value = env[key];
     if (value === undefined || value === '') continue;
-    raw[key] = key === 'PORT' ? Number(value) : value;
+    raw[key] =
+      key === 'PORT' || key === 'SMTP_PORT' || key === 'MAILER_TICK_MS' ? Number(value) : value;
   }
   const withDefaults = Value.Default(ConfigSchema, raw);
   const errors = [...Value.Errors(ConfigSchema, withDefaults)];

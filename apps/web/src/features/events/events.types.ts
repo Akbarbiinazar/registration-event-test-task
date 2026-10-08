@@ -28,3 +28,14 @@ export interface OrganizerEvent {
   event: PublicEvent;
   stats: { registered: number; waitlisted: number; checkedIn: number; capacity: number };
 }
+
+export interface RegistrationResult {
+  status: 'confirmed' | 'waitlisted';
+  alreadyRegistered: boolean;
+}
+
+export interface Ticket {
+  event: { id: string; title: string; startsAtLabel: string };
+  status: 'confirmed' | 'waitlisted' | 'cancelled';
+  code?: string;
+}

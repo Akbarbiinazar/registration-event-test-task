@@ -5,6 +5,7 @@ import {
   EventListPage,
   OrganizerPage,
   PublicEventPage,
+  TicketPage,
 } from '@/features/events';
 
 export function App() {
@@ -16,6 +17,7 @@ export function App() {
           <Route path="/events/new" element={<CreateEventPage />} />
           <Route path="/events/:id/created" element={<EventCreatedPage />} />
           <Route path="/e/:id" element={<PublicEventPage />} />
+          <Route path="/t/:token" element={<TicketPage />} />
           <Route path="/o/:id" element={<OrganizerPage />} />
         </Routes>
       </main>

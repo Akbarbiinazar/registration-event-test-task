@@ -63,7 +63,6 @@ test('detail shows registration, field error, retry, waitlist and page states', 
   await capture(page, 'general-error');
   await page.unroute(`**/api/events/${id}/registrations`);
   await page.getByRole('button', { name: 'Повторить', exact: true }).click();
-  await page.getByRole('button', { name: 'Встать в лист ожидания' }).click();
   await expect(page.getByRole('status')).toHaveText('Вы в листе ожидания');
   await capture(page, 'waitlist-success');
   await page.goto('/e/not-an-event');

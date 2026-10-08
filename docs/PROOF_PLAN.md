@@ -215,3 +215,5 @@
 
 | UI-03 | Форма создания: ошибки с переходом к полю, общая ошибка, ожидание, подтверждение, 1280/390 px | `e2e/create-event-styling.spec.ts`, `docs/screenshots/create-event-*` | 1 passed; полный E2E — 16 passed; 10 снимков, горизонтального переполнения нет (2026-10-09 00:42). |
 | UI-03 | Событие сохраняется и отображается в поясе браузера | `e2e/create-event-styling.spec.ts` (`timezoneId: Asia/Bishkek`, GET API и публичная страница) | В БД/API `Asia/Bishkek`, введённые 18:00 показаны как 18:00 (2026-10-09 00:42). |
+
+| UI-02/03 | Повтор после ошибки напрямую отправляет форму, валидация email остаётся в API | `e2e/event-detail-styling.spec.ts` и полный `npm run test:e2e` | 16 passed после исправления; `npm run check` — 77 API + 1 web passed (2026-10-09 00:45). |

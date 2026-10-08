@@ -23,10 +23,6 @@ export function PublicEventPage() {
     setFieldError('');
     setGeneralError('');
     setResult(null);
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
-      setFieldError('Укажите корректный email');
-      return;
-    }
     setPending(true);
     try {
       setResult(await registerForEvent(id, email));
@@ -117,7 +113,7 @@ export function PublicEventPage() {
               ? 'Оставьте email, чтобы встать в лист ожидания.'
               : 'Оставьте email, чтобы получить билет.'}
           </p>
-          <form onSubmit={(event) => void submit(event)} noValidate>
+          <form id="registration-form" onSubmit={(event) => void submit(event)} noValidate>
             <Field
               id="registration-email"
               label="Ваш email"
@@ -145,9 +141,10 @@ export function PublicEventPage() {
             <div className="registration-error" role="alert">
               <p>{generalError}</p>
               <button
-                type="button"
+                type="submit"
+                form="registration-form"
                 className="secondary-action"
-                onClick={() => setGeneralError('')}
+                disabled={pending}
               >
                 Повторить
               </button>

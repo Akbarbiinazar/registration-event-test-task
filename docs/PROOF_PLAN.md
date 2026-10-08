@@ -217,3 +217,5 @@
 | UI-03 | Событие сохраняется и отображается в поясе браузера | `e2e/create-event-styling.spec.ts` (`timezoneId: Asia/Bishkek`, GET API и публичная страница) | В БД/API `Asia/Bishkek`, введённые 18:00 показаны как 18:00 (2026-10-09 00:42). |
 
 | UI-02/03 | Повтор после ошибки напрямую отправляет форму, валидация email остаётся в API | `e2e/event-detail-styling.spec.ts` и полный `npm run test:e2e` | 16 passed после исправления; `npm run check` — 77 API + 1 web passed (2026-10-09 00:45). |
+| 11 | Финальная локальная проверка | `npm run check`, `CI=1 npm run test:e2e`, `bash scripts/smoke.sh` | Зелёные: lint, инварианты, типы, 77 API + 1 web тест, сборки; 16 E2E passed; билет найден в Mailpit (2026-10-09 00:55). Smoke обращался к уже запущенному API на 3000. |
+| 11 | Инструкция из свежего клона | `git clone --no-hardlinks` в `/private/tmp`, `npm ci`, `npm run db:up`, `npm run migrate` | `npm ci` завершился успешно (351 пакет); Compose не завершился: Docker сообщил `read-only file system`, PostgreSQL стал unhealthy, миграции получили `ECONNREFUSED`. Полный критерий не подтверждён (2026-10-09 00:57). |

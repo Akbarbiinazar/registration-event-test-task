@@ -20,7 +20,7 @@
     "format": "prettier --write .",
     "check:invariants": "bash scripts/check-invariants.sh",
     "typecheck": "tsc --noEmit && npm run typecheck --workspaces --if-present",
-    "test": "npm test -w apps/api",
+    "test": "npm test -w apps/api && npm test -w apps/web",
     "test:proofs": "npm run test:proofs -w apps/api",
     "test:e2e": "playwright test",
     "build": "npm run build --workspaces --if-present",

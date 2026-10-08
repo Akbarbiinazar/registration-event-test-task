@@ -209,3 +209,6 @@
 | UI-01 | E2E не добавляет события в dev-базу | Отдельные порты и `events_test` в `playwright.config.ts`; подсчёт строк dev-базы до/после полного E2E | 38 → 38; `npm run test:e2e` — 14 passed (2026-10-09 00:25). |
 | UI-01 | Демо-данные добавляются без дублей, существующие данные не удаляются | Два запуска `npm run seed` с `DATABASE_URL=…/events_test` | Добавлено 7, затем 0; `db:reset:dev` не запускался (2026-10-09 00:25). |
 | UI-01 | Список: дата и зона события, загрузка/пусто/ошибка, повтор, клавиатура и 390 px | `e2e/event-list.spec.ts`; скриншоты `docs/screenshots/event-list-{1280,390}.png` | 2 passed; полный E2E — 14 passed; горизонтального переполнения при 390 px нет (2026-10-09 00:25). |
+
+| UI-02 | Детали: регистрация, ошибка поля/сервера, лист ожидания, загрузка, 404, повтор; 1280/390 px | `e2e/event-detail-styling.spec.ts`, `docs/screenshots/event-detail-*` | 1 passed; полный E2E — 15 passed; 18 снимков, горизонтального переполнения нет (2026-10-09 00:38). |
+| UI-02 | Подсказка и ошибка Field связаны с полем | `apps/web/src/shared/ui/Field.test.tsx` | 1 passed в `npm test`; `npm run check`: 77 API + 1 web passed (2026-10-09 00:38). |

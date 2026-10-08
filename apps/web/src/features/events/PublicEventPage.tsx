@@ -1,70 +1,169 @@
 import { useState, type FormEvent } from 'react';
-import { useParams } from 'react-router';
+import { Link, useParams } from 'react-router';
+import { ApiError } from '@/shared/api/client';
+import { EventDateTime } from '@/shared/ui/EventDateTime';
+import { Field } from '@/shared/ui/Field';
 import { fetchEvent, registerForEvent } from './events.api';
 import type { RegistrationResult } from './events.types';
 import { useLoad } from './useLoad';
+import './event-detail.css';
 
 export function PublicEventPage() {
   const { id = '' } = useParams();
-  const state = useLoad((signal) => fetchEvent(id, signal), [id]);
+  const [retry, setRetry] = useState(0);
+  const state = useLoad((signal) => fetchEvent(id, signal), [id, retry]);
   const [email, setEmail] = useState('');
   const [result, setResult] = useState<RegistrationResult | null>(null);
-  const [error, setError] = useState('');
+  const [fieldError, setFieldError] = useState('');
+  const [generalError, setGeneralError] = useState('');
   const [pending, setPending] = useState(false);
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    setPending(true);
-    setError('');
+    setFieldError('');
+    setGeneralError('');
     setResult(null);
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
+      setFieldError('Укажите корректный email');
+      return;
+    }
+    setPending(true);
     try {
       setResult(await registerForEvent(id, email));
     } catch (failure) {
-      setError(failure instanceof Error ? failure.message : 'Не удалось зарегистрироваться');
+      if (failure instanceof ApiError && failure.code === 'validation_error') {
+        setFieldError(failure.message);
+      } else {
+        setGeneralError(
+          failure instanceof Error ? failure.message : 'Не удалось зарегистрироваться',
+        );
+      }
     } finally {
       setPending(false);
     }
   }
-  if (state.kind === 'loading') return <p>Загрузка…</p>;
-  if (state.kind === 'error') {
-    return <p role="alert">{state.status === 404 ? 'Событие не найдено' : state.message}</p>;
-  }
+
+  if (state.kind === 'loading')
+    return (
+      <section className="event-detail-page" role="status" aria-label="Загрузка события">
+        <span className="visually-hidden">Загрузка события…</span>
+        <div className="detail-skeleton" aria-hidden="true">
+          <span />
+          <span />
+          <span />
+          <span />
+        </div>
+      </section>
+    );
+  if (state.kind === 'error')
+    return (
+      <section className="event-detail-page">
+        <Link className="back-link" to="/">
+          ← Все события
+        </Link>
+        <div className="detail-state" role={state.status === 404 ? undefined : 'alert'}>
+          <h1>{state.status === 404 ? 'Событие не найдено' : 'Событие не загрузилось'}</h1>
+          {state.status !== 404 && (
+            <>
+              <p>{state.message}</p>
+              <button
+                type="button"
+                className="secondary-action"
+                onClick={() => setRetry((value) => value + 1)}
+              >
+                Повторить загрузку
+              </button>
+            </>
+          )}
+        </div>
+      </section>
+    );
   const e = state.data;
+  const seatsText =
+    e.seatsLeft === 0
+      ? 'Мест нет'
+      : e.seatsLeft <= 3
+        ? `Мало мест · осталось ${e.seatsLeft}`
+        : `Осталось ${e.seatsLeft} мест`;
   return (
-    <article>
-      <h1>{e.title}</h1>
-      {e.hasStarted && <p role="status">Событие уже идёт</p>}
-      <p>{e.startsAtLabel}</p>
-      {e.description && <p style={{ whiteSpace: 'pre-wrap' }}>{e.description}</p>}
-      <p>
-        {e.seatsLeft > 0
-          ? `Осталось мест: ${e.seatsLeft}`
-          : 'Мест нет, можно встать в лист ожидания'}
-      </p>
-      <form onSubmit={(event) => void submit(event)} noValidate>
-        <label htmlFor="registration-email">Ваш email</label>{' '}
-        <input
-          id="registration-email"
-          type="email"
-          autoComplete="email"
-          value={email}
-          onChange={(event) => setEmail(event.target.value)}
-          disabled={pending}
-        />{' '}
-        <button type="submit" disabled={pending}>
-          {pending ? 'Регистрация…' : 'Зарегистрироваться'}
-        </button>
-      </form>
-      {error && <p role="alert">{error}</p>}
-      {result && (
-        <p role="status">
-          {result.alreadyRegistered
-            ? 'Вы уже зарегистрированы'
-            : result.status === 'confirmed'
-              ? 'Место ваше, билет на почте'
-              : 'Вы в листе ожидания'}
-        </p>
-      )}
+    <article className="event-detail-page">
+      <Link className="back-link" to="/">
+        ← Все события
+      </Link>
+      <header className="detail-header">
+        <div>
+          <p className="event-list-eyebrow">Событие</p>
+          <h1>{e.title}</h1>
+          {e.hasStarted && <p role="status">Событие уже идёт</p>}
+        </div>
+        <div className="detail-datetime">
+          <EventDateTime
+            startsAt={e.startsAt}
+            startsAtLabel={e.startsAtLabel}
+            timezone={e.timezone}
+          />
+        </div>
+      </header>
+      <div className="detail-content">
+        <div>
+          {e.description && <p className="detail-description">{e.description}</p>}
+          <p className="seats-chip">{seatsText}</p>
+          {e.seatsLeft > 0 && <p className="seat-legacy">Осталось мест: {e.seatsLeft}</p>}
+        </div>
+        <section className="registration-panel" aria-labelledby="registration-title">
+          <h2 id="registration-title">{e.seatsLeft === 0 ? 'Лист ожидания' : 'Регистрация'}</h2>
+          <p>
+            {e.seatsLeft === 0
+              ? 'Оставьте email, чтобы встать в лист ожидания.'
+              : 'Оставьте email, чтобы получить билет.'}
+          </p>
+          <form onSubmit={(event) => void submit(event)} noValidate>
+            <Field
+              id="registration-email"
+              label="Ваш email"
+              hint="Билет или уведомление придёт на эту почту."
+              error={fieldError}
+              required
+            >
+              <input
+                type="email"
+                autoComplete="email"
+                value={email}
+                onChange={(event) => setEmail(event.target.value)}
+                disabled={pending}
+              />
+            </Field>
+            <button className="primary-action" type="submit" disabled={pending}>
+              {pending
+                ? 'Отправляем…'
+                : e.seatsLeft === 0
+                  ? 'Встать в лист ожидания'
+                  : 'Зарегистрироваться'}
+            </button>
+          </form>
+          {generalError && (
+            <div className="registration-error" role="alert">
+              <p>{generalError}</p>
+              <button
+                type="button"
+                className="secondary-action"
+                onClick={() => setGeneralError('')}
+              >
+                Повторить
+              </button>
+            </div>
+          )}
+          {result && (
+            <p className="registration-success" role="status" aria-live="polite">
+              {result.alreadyRegistered
+                ? 'Вы уже зарегистрированы'
+                : result.status === 'confirmed'
+                  ? 'Место ваше, билет на почте'
+                  : 'Вы в листе ожидания'}
+            </p>
+          )}
+        </section>
+      </div>
     </article>
   );
 }

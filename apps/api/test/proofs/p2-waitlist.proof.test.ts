@@ -46,11 +46,11 @@ it('P2: promotes the first waitlisted registration and queues its ticket', async
   );
   expect(before.rows.map((row) => row.status)).toEqual(['confirmed', 'waitlisted', 'waitlisted']);
   for (const row of before.rows.slice(1)) {
-    const letters = await testPool.query<{ kind: string }>(
-      'SELECT kind FROM outbox_emails WHERE registration_id = $1',
+    const letters = await testPool.query<{ kind: string; dedup_key: string }>(
+      'SELECT kind, dedup_key FROM outbox_emails WHERE registration_id = $1',
       [row.id],
     );
-    expect(letters.rows.map((letter) => letter.kind)).toEqual(['waitlisted']);
+    expect(letters.rows).toEqual([{ kind: 'waitlisted', dedup_key: `waitlisted:${row.id}` }]);
   }
   const cancelled = await app.inject({
     method: 'DELETE',
@@ -62,11 +62,26 @@ it('P2: promotes the first waitlisted registration and queues its ticket', async
     [eventId],
   );
   expect(after.rows.map((row) => row.status)).toEqual(['cancelled', 'confirmed', 'waitlisted']);
-  const promotedLetters = await testPool.query<{ kind: string }>(
-    'SELECT kind FROM outbox_emails WHERE registration_id = $1 ORDER BY id',
+  const promotedLetters = await testPool.query<{ kind: string; dedup_key: string }>(
+    'SELECT kind, dedup_key FROM outbox_emails WHERE registration_id = $1 ORDER BY id',
     [before.rows[1]!.id],
   );
-  expect(promotedLetters.rows.map((letter) => letter.kind)).toEqual(['waitlisted', 'ticket']);
+  expect(promotedLetters.rows).toEqual([
+    { kind: 'waitlisted', dedup_key: `waitlisted:${before.rows[1]!.id}` },
+    { kind: 'ticket', dedup_key: `ticket:${before.rows[1]!.id}` },
+  ]);
+  expect(
+    (await app.inject({ method: 'DELETE', url: `/api/tickets/${before.rows[0]!.manage_token}` }))
+      .statusCode,
+  ).toBe(200);
+  const cancelledLetters = await testPool.query<{ kind: string; dedup_key: string }>(
+    'SELECT kind, dedup_key FROM outbox_emails WHERE registration_id = $1 ORDER BY id',
+    [before.rows[0]!.id],
+  );
+  expect(cancelledLetters.rows).toEqual([
+    { kind: 'ticket', dedup_key: `ticket:${before.rows[0]!.id}` },
+    { kind: 'cancelled', dedup_key: `cancelled:${before.rows[0]!.id}` },
+  ]);
   const event = await testPool.query<{ seats_taken: number }>(
     'SELECT seats_taken FROM events WHERE id = $1',
     [eventId],

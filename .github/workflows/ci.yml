@@ -1,0 +1,42 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: events
+          POSTGRES_PASSWORD: events
+          POSTGRES_DB: events
+        ports:
+          - 5433:5432
+        options: >-
+          --health-cmd "pg_isready -U events -d events"
+          --health-interval 2s
+          --health-timeout 3s
+          --health-retries 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # check-invariants compares migrations against main
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Create test database
+        run: PGPASSWORD=events psql -h localhost -p 5433 -U events -d events -c 'CREATE DATABASE events_test'
+      - run: npm run migrate
+      - run: npm run lint
+      - run: npm run check:invariants
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run build
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test:e2e

@@ -49,4 +49,39 @@ report "migrations: no M/D/R against main" "$hits"
 hits=$(git ls-files '.env*' '**/.env*' | grep -Ev '(^|/)\.env\.example$' || true)
 report ".env* not tracked (except .env.example)" "$hits"
 
+# 5. every bare import is declared in the workspace (or root) package.json
+hits=""
+for ws in apps/*/; do
+  [ -f "${ws}package.json" ] || continue
+  # shellcheck disable=SC2016
+  out=$(node -e '
+    const fs = require("fs"), path = require("path");
+    const [ws] = process.argv.slice(1);
+    const declared = new Set();
+    for (const f of [ws + "package.json", "package.json"]) {
+      const j = JSON.parse(fs.readFileSync(f, "utf8"));
+      for (const k of ["dependencies", "devDependencies"]) Object.keys(j[k] ?? {}).forEach((d) => declared.add(d));
+    }
+    const missing = new Set();
+    const walk = (dir) => {
+      for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
+        const p = path.join(dir, e.name);
+        if (e.isDirectory()) { if (!["node_modules", "dist"].includes(e.name)) walk(p); continue; }
+        if (!/\.(ts|tsx)$/.test(e.name)) continue;
+        const src = fs.readFileSync(p, "utf8");
+        for (const m of src.matchAll(/(?:from|import)\s*\(?\s*["\x27]([^"\x27]+)["\x27]/g)) {
+          const spec = m[1];
+          if (/^(\.|@\/|node:)/.test(spec)) continue;
+          const name = spec.startsWith("@") ? spec.split("/").slice(0, 2).join("/") : spec.split("/")[0];
+          if (!declared.has(name)) missing.add(ws + ": " + name + " (" + p + ")");
+        }
+      }
+    };
+    for (const d of ["src", "test"]) if (fs.existsSync(ws + d)) walk(ws + d);
+    console.log([...missing].join("\n"));
+  ' "$ws")
+  [ -n "$out" ] && hits="${hits}${out}"$'\n'
+done
+report "imports are declared in package.json" "${hits%$'\n'}"
+
 exit $fail

@@ -13,6 +13,9 @@
 - Следующим заходом: …
 ```
 
+Необязательные строки (добавляются, когда есть что сказать): `Промпт:`, `Где ошибся агент:`,
+`Что правил вручную автор:`, `Коммит:` (хэш добавляется отдельным коммитом, историю не переписываем).
+
 ## 2026-10-07 23:47 — Старт
 - Инструмент: Claude Code (CLI), модель Claude Opus 5.5.
 - Создан репозиторий, первый коммит — исходное ТЗ в `docs/ASSIGNMENT.md`.
@@ -66,3 +69,22 @@
 - Проверка: `check-invariants.sh` на чистом дереве — exit 0; на временных нарушениях (`it.only`, `now()` в domain, правка миграции, `.env` в индексе) — 4 FAIL, exit 1; нарушения откачены. ESLint не запускался: пакетов ещё нет.
 - Отклонения от плана / найденные проблемы: во время негативной проверки сделал временный коммит на main и откатил его `reset --soft` (не публиковался).
 - Следующим заходом: в слайсе 01 поставить `eslint`, `typescript-eslint`, `eslint-plugin-vitest`, `@eslint-community/eslint-plugin-eslint-comments` (причина — механика запретов) и добавить `check:invariants` в `npm run check`; уточнить путь к миграциям.
+
+## 2026-10-08 15:06 — Слайс 01: ходячий скелет
+- Промпт: «создай walking skeleton, без фич» (monorepo, docker, API с health, web, ESLint-границы, тесты, CI); стек в промпте (Next/Nest/zod/contracts) расходился со спецификацией — по решению автора взята спецификация (Fastify, React+Vite, TypeBox, `pg`, без общего пакета).
+- Сделано: workspaces `apps/api` (Fastify, модуль health: controller → service → repository, `Clock`/`FakeClock`, валидация env через TypeBox, общий фильтр ошибок, раннер миграций с checksum, заглушка seed) и `apps/web` (`features/` + `shared/`, tokens.css, API-клиент, страница статуса); docker-compose (Postgres 16 на :5433, Mailpit), `docker/init-test-db.sql` создаёт `events_test`; ESLint-границы web; Vitest-стенд (globalSetup падает без БД, TRUNCATE перед тестом, `fileParallelism: false`); Playwright; `.github/workflows/ci.yml`.
+- Решения и почему:
+  - Формат ошибки API `{ error: { code, message } }` — **спецификация его не задаёт**, выбран мной; поменять можно до слайса 02.
+  - Слои «controller → service → repository» (правило автора) применены к health-модулю; `domain/*` из §6 спецификации появится в слайсах с доменной логикой — расхождение терминов стоит снять.
+  - Дефолты env (порт, URL БД) зашиты в `config.ts`, `.env` не обязателен — быстрый локальный запуск.
+  - Границы web: фича импортирует только `@/shared/*` или себя (относительные пути, не глубже одной подпапки); `shared` не импортирует `features`/`app`.
+  - `seed` — заглушка: доменных таблиц ещё нет (слайс 01 их не вводит).
+  - Новые зависимости и причины: `fastify`, `pg`, `@sinclair/typebox` — стек по спецификации; `react`, `react-dom`, `vite`, `@vitejs/plugin-react` — frontend по спецификации; `typescript`, `tsx` (запуск TS без сборки), `vitest`, `@playwright/test` — тесты; `eslint`, `typescript-eslint`, `eslint-plugin-vitest`, `@eslint-community/eslint-plugin-eslint-comments`, `prettier` — механика запретов из CLAUDE.md; `concurrently` — `npm run dev` поднимает api и web одной командой.
+- Проверка: `npm run check` — зелёный (lint, check-invariants 4×OK, typecheck, 7 тестов, build). `docker compose stop postgres && npm test` — красный: `Error: Postgres недоступна на postgres://events:events@localhost:5433/events_test — запустите npm run db:up`. Временный `it.skip` → `vitest/no-disabled-tests`, lint красный. Временные импорты между фичами и `shared → features` → `no-restricted-imports`. `npm run test:e2e` — 1 passed (Chromium).
+- Отклонения от плана / найденные проблемы:
+  - Где ошибся агент: из-за ошибки в цепочке `&&` (macOS `sed -i`) часть файлов `apps/api` записалась в корень, а `npm install` запустился на уровень выше репозитория и заполнил диск; после освобождения места вне репозитория остатков не найдено, файлы перенесены. Второй `npm install -D` молча потерял `react`/`react-dom` в `apps/web` — найдено по падению `build`, переустановлено.
+  - Что правил вручную автор: освободил диск; остановил чужой контейнер `fibe-backend-postgres-1`, занимавший порт 5433.
+  - Не проверено: GitHub Actions не запускался (нет push); CI создаёт `events_test` шагом `psql`.
+  - В `npm run check` добавлен `check:invariants` (как записано в DEVLOG 01:33); в таблице команд `CLAUDE.md` это не отражено.
+- Следующим заходом: слайс 02; решить, переименовать ли слои в спецификации (`domain/*` vs service/repository); правила/проверки после слайса — предложены пользователю в отчёте.
+- Правила после слайса (одобрены автором): `check-invariants.sh` п. 5 — каждый импортируемый пакет объявлен в `package.json` (проверено временным `left-pad`: FAIL); `.claude/rules/npm.md` и запрет в `CLAUDE.md` — `npm install` только из корня с `-w`; `CLAUDE.md`: `check:invariants` в таблице команд, пометка про необязательный `.env`.

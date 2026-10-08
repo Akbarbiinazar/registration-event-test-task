@@ -1,0 +1,41 @@
+{
+  "name": "registration-event",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "workspaces": [
+    "apps/api",
+    "apps/web"
+  ],
+  "scripts": {
+    "db:up": "docker compose up -d --wait",
+    "db:down": "docker compose down",
+    "migrate": "npm run migrate -w apps/api",
+    "seed": "npm run seed -w apps/api",
+    "dev": "concurrently -n api,web -c blue,green \"npm run dev -w apps/api\" \"npm run dev -w apps/web\"",
+    "lint": "eslint . && prettier --check .",
+    "format": "prettier --write .",
+    "check:invariants": "bash scripts/check-invariants.sh",
+    "typecheck": "tsc --noEmit && npm run typecheck --workspaces --if-present",
+    "test": "npm test -w apps/api",
+    "test:proofs": "npm run test:proofs -w apps/api",
+    "test:e2e": "playwright test",
+    "build": "npm run build --workspaces --if-present",
+    "check": "npm run lint && npm run check:invariants && npm run typecheck && npm test && npm run build"
+  },
+  "devDependencies": {
+    "@eslint-community/eslint-plugin-eslint-comments": "^4.8.1",
+    "@playwright/test": "^1.64.0",
+    "@types/node": "^26.6.4",
+    "concurrently": "^10.0.5",
+    "eslint": "^8.57.1",
+    "eslint-plugin-vitest": "^0.5.4",
+    "prettier": "^3.9.9",
+    "tsx": "^4.23.15",
+    "typescript": "^6.0.3",
+    "typescript-eslint": "^8.71.1",
+    "vitest": "^3.2.7"
+  }
+}

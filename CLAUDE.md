@@ -37,9 +37,11 @@
 | Только тесты-доказательства | `npm run test:proofs` |
 | E2E (Playwright) | `npm run test:e2e` |
 | Сборка | `npm run build` |
-| Всё перед коммитом | `npm run check` (= lint + typecheck + test + build) |
+| Механические проверки запретов | `npm run check:invariants` |
+| Всё перед коммитом | `npm run check` (= lint + check:invariants + typecheck + test + build) |
 
 Mailpit UI: http://localhost:8025. Postgres на хосте: порт `5433`.
+`.env` необязателен: значения по умолчанию лежат в `apps/api/src/config.ts`, примеры — в `.env.example`.
 
 ## Рабочий процесс
 
@@ -83,7 +85,21 @@ Mailpit UI: http://localhost:8025. Postgres на хосте: порт `5433`.
   (проверка: `scripts/check-invariants.sh`).
 - Не использовать `any` и `@ts-ignore`; `eslint-disable` — только построчно и
   с комментарием-причиной.
+- `npm install` — только из корня и с `-w` — `.claude/rules/npm.md`
+  (проверка: `scripts/check-invariants.sh`).
 - Не коммитить `.env`, секреты, `node_modules`, артефакты сборки.
 - Не редактировать `docs/ASSIGNMENT.md`.
 - Не выходить за рамки текущего слайса: заметки «на потом» — в раздел
   «Следующим заходом» в DEVLOG, а не в код.
+
+# Rules
+@project_spec.md
+- One vertical slice at a time (DB + API + UI + test). Stop after each for review.
+- Follow the folder layout and layering exactly: controller -> service -> repository; web features import only shared/ or themselves.
+- Define the contract (packages/contracts) before implementing either side.
+- Validate all input at the API boundary. Return the common error shape.
+- Never invent requirements. If acceptance criteria are missing in project_spec, ask.
+- Each slice has a row in PROOF_PLAN (criterion, how proven, result). Fill it only with results you actually ran; never mark a criterion proven without evidence.
+- After each slice add an entry to DEVLOG: prompt, what you got wrong, what I changed by hand, decisions, how verified, commit hash.
+- Run lint, typecheck, and tests before reporting done; show the output.
+- If you make a decision project_spec does not cover, say so and ask.

@@ -1,5 +1,9 @@
 import { randomUUID } from 'node:crypto';
 import { expect, test } from '@playwright/test';
+import { buildApp } from '../apps/api/src/app.js';
+import { SystemClock } from '../apps/api/src/clock.js';
+import { loadConfig } from '../apps/api/src/config.js';
+import { createPool } from '../apps/api/src/db.js';
 
 interface MailpitList {
   messages: { ID: string; To: { Address: string }[] }[];
@@ -82,4 +86,46 @@ test('organizer stream reconnects after a lost connection', async ({ page, reque
   await expect(page.getByRole('status')).toContainText('Переподключение');
   await expect(page.getByRole('status')).toContainText('live', { timeout: 10000 });
   expect(attempts).toBeGreaterThanOrEqual(2);
+});
+
+test('organizer dashboard reconnects after the API restarts', async ({ page, request }) => {
+  const config = { ...loadConfig(), NODE_ENV: 'test' as const };
+  const db = createPool(config.TEST_DATABASE_URL);
+  let api = buildApp({ db, clock: new SystemClock(), config });
+  try {
+    await api.listen({ host: '127.0.0.1', port: 0 });
+    const port = (api.server.address() as { port: number }).port;
+    const base = `http://127.0.0.1:${port}`;
+    await page.route('**/api/organizer/**', (route) => {
+      const target = new URL(route.request().url());
+      return route.continue({ url: `${base}${target.pathname}${target.search}` });
+    });
+    const created = await request.post(`${base}/api/events`, {
+      data: {
+        title: 'API restart',
+        startsAt: '2030-05-10T15:00:00Z',
+        timezone: 'UTC',
+        capacity: 1,
+      },
+    });
+    const { event, organizerKey } = (await created.json()) as {
+      event: { id: string };
+      organizerKey: string;
+    };
+    await page.goto(`/o/${event.id}#key=${organizerKey}`);
+    await expect(page.getByRole('status')).toContainText('live');
+    api.server.closeAllConnections();
+    await api.close();
+    await expect(page.getByRole('status')).toContainText('Переподключение');
+    api = buildApp({ db, clock: new SystemClock(), config });
+    await api.listen({ host: '127.0.0.1', port });
+    await expect(page.getByRole('status')).toContainText('live', { timeout: 10000 });
+    await expect(page.getByRole('listitem').filter({ hasText: 'Мест осталось' })).toContainText(
+      '1',
+    );
+  } finally {
+    api.server.closeAllConnections();
+    await api.close();
+    await db.end();
+  }
 });

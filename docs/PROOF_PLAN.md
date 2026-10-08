@@ -191,3 +191,6 @@
 | 04 | P2: FIFO-повышение, письмо ожидающему и билет повышенному; два одновременных отказа | `apps/api/test/proofs/p2-waitlist.proof.test.ts`, `assertInvariants()` | Сначала красный: письмо `waitlisted` отсутствовало; затем 2 passed (2026-10-08 17:17) |
 | 04 | Отказ ожидающего, идемпотентность, новая регистрация после отказа, отказ после начала и запрет отказа после чекина | `apps/api/test/registrations.test.ts` | 7 passed вместе с тестами слайса 03; `npm run check` — 56 passed (2026-10-08 17:17) |
 | 04 | Отказ по ссылке из письма → письма A и B в Mailpit → билет B в UI | `e2e/waitlist-cancellation.spec.ts` | `npm run test:e2e` — 6 passed, включая новый сценарий (2026-10-08 17:16) |
+| 05 | P3: 20 одновременных регистраций × 10 раундов и кейс «ровно двое» | `apps/api/test/proofs/p3-last-seat-race.proof.test.ts` | 1 подтверждённый и 19 ожидающих в каждом раунде; 5 последовательных `npm run test:proofs` — по 9 passed (2026-10-08 17:25) |
+| 05 | Два одновременных отказа, регистрация ‖ отказ × 50, FIFO при непустом листе | `p3-last-seat-race.proof.test.ts`, `assertInvariants()` | Зелёные в 5 последовательных прогонах; `npm run check` — 62 passed (2026-10-08 17:25) |
+| 05 | Прямой `UPDATE` сверх лимита | `p3-last-seat-race.proof.test.ts` | PostgreSQL вернула `23514` (`check_violation`), счётчик не изменился (2026-10-08 17:25) |

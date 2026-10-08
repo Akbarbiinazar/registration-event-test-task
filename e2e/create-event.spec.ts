@@ -18,6 +18,7 @@ test('organizer creates an event; public and organizer pages show the same time'
   const pub = await context.newPage();
   await pub.goto(publicUrl as string);
   await expect(pub.getByText('18:00')).toBeVisible();
+  await expect(pub.getByText(/UTC[+-]/)).toBeVisible();
   await expect(pub.getByText('Осталось мест: 3')).toBeVisible();
 
   const org = await context.newPage();
@@ -28,8 +29,9 @@ test('organizer creates an event; public and organizer pages show the same time'
 
 test('invalid form shows the API message', async ({ page }) => {
   await page.goto('/events/new');
+  await page.getByLabel('Название').fill('Bad capacity');
   await page.getByLabel('Начало (в вашем часовом поясе)').fill('2030-05-10T18:00');
   await page.getByLabel('Количество мест').fill('0');
   await page.getByRole('button', { name: 'Создать' }).click();
-  await expect(page.getByRole('alert')).toBeVisible();
+  await expect(page.getByRole('alert')).toHaveText(/Количество мест/);
 });

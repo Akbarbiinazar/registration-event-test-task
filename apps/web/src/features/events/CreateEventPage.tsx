@@ -39,6 +39,7 @@ export function CreateEventPage() {
     <section>
       <h1>Новое событие</h1>
       <form
+        noValidate
         onSubmit={(e) => void onSubmit(e)}
         style={{ display: 'grid', gap: 'var(--space-3)', maxWidth: 420 }}
       >
@@ -56,7 +57,14 @@ export function CreateEventPage() {
         </label>
         <label>
           Количество мест
-          <input name="capacity" type="number" defaultValue={10} style={{ display: 'block' }} />
+          <input
+            name="capacity"
+            type="number"
+            min={1}
+            max={10000}
+            defaultValue={10}
+            style={{ display: 'block' }}
+          />
         </label>
         {error && (
           <p role="alert" style={{ color: 'var(--color-error)' }}>

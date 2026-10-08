@@ -40,7 +40,7 @@ describe('POST /api/events', () => {
       seatsLeft: 5,
       timezone: 'Europe/Moscow',
       hasStarted: false,
-      startsAtLabel: '1 декабря 2026 г. в 18:00 (Moscow, UTC+3)',
+      startsAtLabel: '1 декабря 2026 г. в 18:00 (Москва, UTC+3)',
     });
     const read = await app.inject({ method: 'GET', url: `/api/events/${event.id}` });
     expect(read.statusCode).toBe(200);
@@ -66,11 +66,28 @@ describe('POST /api/events', () => {
     ['past date', { startsAt: '2026-05-31T00:00:00.000Z' }],
     ['invalid timezone', { timezone: 'Mars/Olympus' }],
     ['invalid date', { startsAt: 'tomorrow' }],
+    ['loose date "2030"', { startsAt: '2030' }],
+    ['date without UTC offset', { startsAt: '2030-05-10T18:00' }],
+    ['whitespace title', { title: '   ' }],
   ])('rejects %s with 400 and the common error shape', async (_name, patch) => {
     const res = await create({ ...valid, ...patch });
     expect(res.statusCode).toBe(400);
     expect(res.json().error.code).toBe('validation_error');
     expect(typeof res.json().error.message).toBe('string');
+  });
+
+  it.each([
+    ['empty title', { title: '' }, 'Название'],
+    ['capacity 0', { capacity: 0 }, 'Количество мест'],
+    ['missing capacity', { capacity: undefined }, 'Количество мест'],
+    ['invalid date', { startsAt: 'tomorrow' }, 'дату'],
+    ['past date', { startsAt: '2026-05-31T00:00:00.000Z' }, 'в будущем'],
+    ['invalid timezone', { timezone: 'Mars/Olympus' }, 'часовой пояс'],
+  ])('explains %s in Russian', async (_name, patch, fragment) => {
+    const res = await create({ ...valid, ...patch });
+    const message: string = res.json().error.message;
+    expect(message).toMatch(/[А-Яа-я]/);
+    expect(message).toContain(fragment);
   });
 });
 
@@ -137,6 +154,16 @@ describe('GET /api/organizer/events/:id', () => {
       expect(res.statusCode).toBe(401);
       expect(res.json().error.code).toBe('unauthorized');
     }
+  });
+
+  it('accepts the Bearer scheme in any case', async () => {
+    const { event, organizerKey } = (await create()).json();
+    const res = await app.inject({
+      method: 'GET',
+      url: `/api/organizer/events/${event.id}`,
+      headers: { authorization: `bearer ${organizerKey}` },
+    });
+    expect(res.statusCode).toBe(200);
   });
 
   it('401 (not 404) for an unknown event', async () => {

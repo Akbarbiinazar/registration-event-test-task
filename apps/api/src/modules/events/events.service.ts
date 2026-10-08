@@ -37,7 +37,7 @@ export class EventsService {
     const now = this.clock.now();
     const startsAt = new Date(input.startsAt);
     if (Number.isNaN(startsAt.getTime())) {
-      throw new AppError(400, 'validation_error', 'Некорректная дата начала');
+      throw new AppError(400, 'validation_error', 'Укажите корректную дату начала');
     }
     if (startsAt.getTime() <= now.getTime()) {
       throw new AppError(400, 'validation_error', 'Дата начала должна быть в будущем');
@@ -64,15 +64,15 @@ export class EventsService {
   }
 
   async get(id: string): Promise<PublicEvent> {
-    const row = UUID.test(id) ? await this.repository.findById(id) : undefined;
+    const row = await this.findExisting(id);
     if (!row) throw new AppError(404, 'not_found', 'Событие не найдено');
     return this.toPublic(row);
   }
 
   /** Same 401 for missing event, missing key and wrong key: nothing leaks about existence. */
   async getForOrganizer(id: string, authorization: string | undefined) {
-    const row = UUID.test(id) ? await this.repository.findById(id) : undefined;
-    const key = authorization?.match(/^Bearer (.+)$/)?.[1];
+    const row = await this.findExisting(id);
+    const key = authorization?.match(/^Bearer (.+)$/i)?.[1];
     const expected = Buffer.from(row?.organizer_token_hash ?? '0'.repeat(64), 'hex');
     const keyMatches = key !== undefined && timingSafeEqual(sha256(key), expected);
     if (!row || !keyMatches) {
@@ -82,6 +82,11 @@ export class EventsService {
       event: this.toPublic(row),
       stats: { registered: 0, waitlisted: 0, checkedIn: 0, capacity: row.capacity },
     };
+  }
+
+  /** A malformed id is an event that does not exist; it never reaches the uuid column. */
+  private findExisting(id: string): Promise<EventRow | undefined> {
+    return UUID.test(id) ? this.repository.findById(id) : Promise.resolve(undefined);
   }
 
   private toPublic(row: EventRow): PublicEvent {

@@ -20,7 +20,10 @@ const CreateEventBody = Type.Object(
   {
     title: Type.String({ minLength: 1, maxLength: 200, pattern: '\\S' }),
     description: Type.Optional(Type.String({ maxLength: 10000 })),
-    startsAt: Type.String({ minLength: 1 }),
+    // ISO 8601 with an explicit offset: a bare "2030" or a zone-less time would be read in the server's zone.
+    startsAt: Type.String({
+      pattern: '^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}(:\\d{2}(\\.\\d+)?)?(Z|[+-]\\d{2}:\\d{2})$',
+    }),
     timezone: Type.String({ minLength: 1 }),
     capacity: Type.Integer({ minimum: 1, maximum: 10000 }),
   },

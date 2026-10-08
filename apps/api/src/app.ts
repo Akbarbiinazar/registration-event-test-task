@@ -3,6 +3,7 @@ import type { Clock } from './clock.js';
 import type { Config } from './config.js';
 import type { Db } from './db.js';
 import { registerErrorHandling } from './errors.js';
+import { registerEventsRoutes } from './modules/events/events.controller.js';
 import { registerHealthRoutes } from './modules/health/health.controller.js';
 
 export interface Deps {
@@ -18,6 +19,8 @@ export function buildApp(deps: Deps): FastifyInstance {
 
   registerErrorHandling(app);
   void app.register(registerHealthRoutes(deps), { prefix: '/api' });
+
+  void app.register(registerEventsRoutes(deps), { prefix: '/api' });
 
   return app;
 }

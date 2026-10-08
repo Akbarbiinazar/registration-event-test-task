@@ -89,3 +89,16 @@
 - Следующим заходом: слайс 02; решить, переименовать ли слои в спецификации (`domain/*` vs service/repository); правила/проверки после слайса — предложены пользователю в отчёте.
 - Правила после слайса (одобрены автором): `check-invariants.sh` п. 5 — каждый импортируемый пакет объявлен в `package.json` (проверено временным `left-pad`: FAIL); `.claude/rules/npm.md` и запрет в `CLAUDE.md` — `npm install` только из корня с `-w`; `CLAUDE.md`: `check:invariants` в таблице команд, пометка про необязательный `.env`.
 - Коммит: `80b6cf3` (`feat(s01): walking skeleton with test rig, health endpoint and CI`).
+
+## 2026-10-08 15:24 — Слайс 02: создание и просмотр события
+- Сделано: миграция `0002_events.sql`; `format.ts` (`formatInZone`, `isValidTimezone`); модуль `events` (controller → service → repository): `POST /api/events`, `GET /api/events`, `GET /api/events/:id`, `GET /api/organizer/events/:id` (Bearer, `timingSafeEqual` по SHA-256); web `features/events` (список, форма, экран «создано», публичная и организаторская страницы), роутинг; e2e создания события.
+- Решения и почему (спецификация не покрывает — подтверждено в плане):
+  - Контракты не выносятся в пакет (спека §1), типы дублируются в web.
+  - API отдаёт готовую `startsAtLabel`, UI время не форматирует; `hasStarted` считается сервером по `clock.now()`.
+  - Подпись зоны — город из IANA-имени латиницей («Moscow», «New York»), а не «Москва»: `Intl` не даёт согласованных русских названий городов. Расхождение с примером из A13 — решить, нужен ли словарь.
+  - Несуществующее событие и неверный ключ организатора дают одинаковый 401; некорректный uuid в `/events/:id` — 404, не 400.
+  - Главная страница теперь список событий; `HealthStatus` из UI убран, e2e health переписан на запрос к `/api/health`.
+  - Зависимость `react-router` (`-w apps/web`): роутинг по спеке §1.
+- Проверка: `npm run check` — зелёный (26 тестов API, lint, check:invariants, typecheck, build); `npm run test:e2e` — 4 passed.
+- Отклонения / проблемы: `sed -i` в macOS не принял команду — правка через Edit; `eslint-disable react-hooks/...` не нужен (плагина нет).
+- Следующим заходом: слайс 03; решить словарь названий зон; `stats` организатора пока нули (таблицы registrations нет).

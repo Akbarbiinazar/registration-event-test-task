@@ -172,3 +172,8 @@
 | 01 | Границы web-слоёв | временные нарушающие импорты + `eslint` | 3 ошибки `no-restricted-imports` (2026-10-08 15:05) |
 | 01 | GitHub Actions зелёный | workflow `CI`, запуск 37755297556 на `80b6cf3` | Зелёный: lint, check:invariants, typecheck, test, build, e2e (2026-10-08) |
 
+| 02 | Создание и чтение события, `seatsLeft`, SHA-256 ключа в БД | `apps/api/test/events.test.ts` | Зелёные (2026-10-08 15:24) |
+| 02 | Валидация (название, лимит 0/10001, прошлая дата, `timezone`) → 400 | `events.test.ts` (`it.each`), `e2e/create-event.spec.ts` | Зелёные (2026-10-08 15:24) |
+| 02 | Организаторский эндпоинт без/с чужим ключом → 401 | `events.test.ts` | Зелёные (2026-10-08 15:24) |
+| 02 | `capacity = 0` и `seats_taken > capacity` → `check_violation` | `events-schema.test.ts` | Зелёные (2026-10-08 15:24) |
+| 02 | Время в поясе события с подписью зоны | `format.test.ts`, `events.test.ts`, `e2e/create-event.spec.ts` (18:00 введено = 18:00 на обеих страницах) | Зелёные (2026-10-08 15:24) |

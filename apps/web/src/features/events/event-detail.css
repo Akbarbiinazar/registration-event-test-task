@@ -35,7 +35,7 @@
 }
 .detail-content {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 360px);
+  grid-template-columns: minmax(0, 1fr) minmax(0, var(--detail-form-width));
   gap: var(--space-7);
   padding-top: var(--space-7);
 }

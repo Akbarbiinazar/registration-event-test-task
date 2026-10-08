@@ -1,4 +1,3 @@
-import { randomUUID } from 'node:crypto';
 import { expect, test, type Page } from '@playwright/test';
 
 async function capture(page: Page, state: string) {
@@ -42,7 +41,7 @@ test('detail shows registration, field error, retry, waitlist and page states', 
   await expect(page.locator('#registration-email')).toHaveAttribute('aria-invalid', 'true');
   await expect(page.locator('#registration-email-error')).toBeVisible();
   await capture(page, 'field-error');
-  await page.getByLabel('Ваш email').fill(`detail-${randomUUID()}@example.com`);
+  await page.getByLabel('Ваш email').fill('detail-one@example.com');
   await page.getByRole('button', { name: 'Зарегистрироваться' }).click();
   await expect(page.getByRole('status')).toHaveText('Место ваше, билет на почте');
   await capture(page, 'success');
@@ -58,7 +57,7 @@ test('detail shows registration, field error, retry, waitlist and page states', 
         body: JSON.stringify({ error: { code: 'unavailable', message: 'Временная ошибка' } }),
       }),
   );
-  await page.getByLabel('Ваш email').fill(`retry-${randomUUID()}@example.com`);
+  await page.getByLabel('Ваш email').fill('detail-two@example.com');
   await page.getByRole('button', { name: 'Встать в лист ожидания' }).click();
   await expect(page.getByRole('alert')).toContainText('Временная ошибка');
   await capture(page, 'general-error');

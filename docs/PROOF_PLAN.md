@@ -212,3 +212,6 @@
 
 | UI-02 | Детали: регистрация, ошибка поля/сервера, лист ожидания, загрузка, 404, повтор; 1280/390 px | `e2e/event-detail-styling.spec.ts`, `docs/screenshots/event-detail-*` | 1 passed; полный E2E — 15 passed; 18 снимков, горизонтального переполнения нет (2026-10-09 00:38). |
 | UI-02 | Подсказка и ошибка Field связаны с полем | `apps/web/src/shared/ui/Field.test.tsx` | 1 passed в `npm test`; `npm run check`: 77 API + 1 web passed (2026-10-09 00:38). |
+
+| UI-03 | Форма создания: ошибки с переходом к полю, общая ошибка, ожидание, подтверждение, 1280/390 px | `e2e/create-event-styling.spec.ts`, `docs/screenshots/create-event-*` | 1 passed; полный E2E — 16 passed; 10 снимков, горизонтального переполнения нет (2026-10-09 00:42). |
+| UI-03 | Событие сохраняется и отображается в поясе браузера | `e2e/create-event-styling.spec.ts` (`timezoneId: Asia/Bishkek`, GET API и публичная страница) | В БД/API `Asia/Bishkek`, введённые 18:00 показаны как 18:00 (2026-10-09 00:42). |

@@ -170,5 +170,5 @@
 | 01 | `it.skip` ломает lint | временный `it.skip` + `eslint` | `vitest/no-disabled-tests`, ошибка (2026-10-08 15:05) |
 | 01 | `GET /api/health` отвечает `ok`/`db` | `apps/api/test/health.test.ts` (3 теста), `e2e/health.spec.ts` | Зелёные (2026-10-08 15:06) |
 | 01 | Границы web-слоёв | временные нарушающие импорты + `eslint` | 3 ошибки `no-restricted-imports` (2026-10-08 15:05) |
-| 01 | GitHub Actions зелёный | — | **не проверено**: workflow ещё не запускался |
+| 01 | GitHub Actions зелёный | workflow `CI`, запуск 37755297556 на `80b6cf3` | Зелёный: lint, check:invariants, typecheck, test, build, e2e (2026-10-08) |
 

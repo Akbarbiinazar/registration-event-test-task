@@ -4,3 +4,4 @@ export { EventListPage } from './EventListPage';
 export { OrganizerPage } from './OrganizerPage';
 export { PublicEventPage } from './PublicEventPage';
 export { TicketPage } from './TicketPage';
+export { CheckinPage } from './CheckinPage';

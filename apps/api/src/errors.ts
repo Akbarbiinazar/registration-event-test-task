@@ -2,7 +2,7 @@ import type { FastifyError, FastifyInstance } from 'fastify';
 
 /** The one error shape every API response uses. */
 export interface ApiErrorBody {
-  error: { code: string; message: string };
+  error: { code: string; message: string; checkedInAt?: string };
 }
 
 export class AppError extends Error {
@@ -10,6 +10,7 @@ export class AppError extends Error {
     readonly statusCode: number,
     readonly code: string,
     message: string,
+    readonly checkedInAt?: string,
   ) {
     super(message);
   }
@@ -36,7 +37,13 @@ export function registerErrorHandling(app: FastifyInstance): void {
 
   app.setErrorHandler((err: FastifyError | AppError, req, reply) => {
     if (err instanceof AppError) {
-      return reply.status(err.statusCode).send(body(err.code, err.message));
+      return reply.status(err.statusCode).send({
+        error: {
+          code: err.code,
+          message: err.message,
+          ...(err.checkedInAt ? { checkedInAt: err.checkedInAt } : {}),
+        },
+      });
     }
     if ('validation' in err && err.validation) {
       const issue = err.validation[0];

@@ -1,6 +1,7 @@
 import { BrowserRouter, Route, Routes } from 'react-router';
 import {
   CreateEventPage,
+  CheckinPage,
   EventCreatedPage,
   EventListPage,
   OrganizerPage,
@@ -19,6 +20,7 @@ export function App() {
           <Route path="/e/:id" element={<PublicEventPage />} />
           <Route path="/t/:token" element={<TicketPage />} />
           <Route path="/o/:id" element={<OrganizerPage />} />
+          <Route path="/o/:id/checkin" element={<CheckinPage />} />
         </Routes>
       </main>
     </BrowserRouter>

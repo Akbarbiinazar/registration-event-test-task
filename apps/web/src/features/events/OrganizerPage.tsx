@@ -1,4 +1,4 @@
-import { useParams } from 'react-router';
+import { Link, useParams } from 'react-router';
 import { fetchOrganizerEvent } from './events.api';
 import { useLoad } from './useLoad';
 
@@ -24,6 +24,9 @@ export function OrganizerPage() {
       <h1>{event.title} — организатор</h1>
       {event.hasStarted && <p role="status">Событие уже идёт</p>}
       <p>{event.startsAtLabel}</p>
+      <p>
+        <Link to={`/o/${id}/checkin${window.location.hash}`}>Открыть экран чекина</Link>
+      </p>
       <ul>
         <li>
           Зарегистрировано: {stats.registered} из {stats.capacity}

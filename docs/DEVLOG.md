@@ -102,6 +102,7 @@
 - Проверка: `npm run check` — зелёный (26 тестов API, lint, check:invariants, typecheck, build); `npm run test:e2e` — 4 passed.
 - Отклонения / проблемы: `sed -i` в macOS не принял команду — правка через Edit; `eslint-disable react-hooks/...` не нужен (плагина нет).
 - Следующим заходом: слайс 03; решить словарь названий зон; `stats` организатора пока нули (таблицы registrations нет).
+- Коммит: `96b739a` (`feat(s02): create and view events with organizer key and zone-aware time`).
 
 ## 2026-10-08 15:31 — Слайс 02: правки по code-review
 - Сделано: словарь русских названий зон СНГ и Центральной Азии (`zone-names.ts`, остальные зоны — город из IANA латиницей); сообщения валидации на русском по полям (`errors.ts`); `startsAt` принимается только как ISO 8601 со смещением (`"2030"` и время без пояса — 400); схема Bearer без учёта регистра; общий `findExisting` вместо двух проверок uuid; у поля «Количество мест» `min`/`max`, форма с `noValidate`, чтобы ошибку показывал API.
@@ -110,4 +111,5 @@
   - Оставлены ограничения, которых нет в ТЗ: `title` без пробелов-only (иначе после `trim` БД даёт 500 вместо 400) и `description` до 10 000 символов.
   - Не менял (замечания-«запахи» из ревью): сборка сервиса в контроллере (как в health), `modules/*` против `domain/*`, `useLoad` в фиче, тройное описание `PublicEvent`.
   - Ключ организатора по-прежнему живёт только в `location.state` экрана «создано»: перезагрузка его теряет («показывается один раз»).
-- Проверка: см. вывод `npm run check` и `npm run test:e2e` в сессии.
+- Проверка: `npm run check` — зелёный (43 теста API, lint, check:invariants, typecheck, build); `npm run test:e2e` — 4 passed.
+- Коммит: `d2bed06` (`fix(s02): address review findings, add CIS zone names`).

@@ -1,7 +1,13 @@
 :root {
   --color-bg: #ffffff;
-  --color-text: #1a1a1a;
-  --color-muted: #6b7280;
+  --color-surface: #f6f8fb;
+  --color-text: #172235;
+  --color-muted: #5d6a7a;
+  --color-border: #dce3eb;
+  --color-accent: #155eef;
+  --color-accent-hover: #0e49bf;
+  --color-accent-soft: #eaf1ff;
+  --color-focus: #155eef;
   --color-ok: #15803d;
   --color-error: #b91c1c;
 
@@ -9,9 +15,25 @@
   --space-2: 8px;
   --space-3: 12px;
   --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --space-7: 48px;
+  --space-8: 64px;
 
   --font-body: system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-size-xs: 0.75rem;
+  --font-size-sm: 0.875rem;
+  --font-size-md: 1rem;
+  --font-size-lg: 1.125rem;
+  --font-size-xl: 1.5rem;
+  --font-size-display: clamp(2rem, 5vw, 3.5rem);
+  --line-height-body: 1.5;
   --radius: 6px;
+  --radius-lg: 14px;
+  --content-width: 1120px;
+  --date-width: 72px;
+  --time-width: 176px;
+  --row-min-height: 116px;
 }
 
 body {
@@ -19,6 +41,24 @@ body {
   background: var(--color-bg);
   color: var(--color-text);
   font-family: var(--font-body);
+  line-height: var(--line-height-body);
+}
+
+:focus-visible {
+  outline: 3px solid var(--color-focus);
+  outline-offset: var(--space-1);
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
 }
 
 .organizer-stats {

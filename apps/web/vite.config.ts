@@ -6,8 +6,8 @@ export default defineConfig({
   plugins: [react()],
   resolve: { alias: { '@': fileURLToPath(new URL('./src', import.meta.url)) } },
   server: {
-    port: 5173,
+    port: Number(process.env.WEB_PORT ?? 5173),
     strictPort: true,
-    proxy: { '/api': 'http://127.0.0.1:3000' },
+    proxy: { '/api': process.env.API_ORIGIN ?? 'http://127.0.0.1:3000' },
   },
 });

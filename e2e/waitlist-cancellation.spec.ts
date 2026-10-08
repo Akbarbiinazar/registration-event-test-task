@@ -42,7 +42,7 @@ test('cancellation promotes the first person in the waitlist and emails both peo
   const waitlistBody = await body((await messages(b))[0]!.ID);
   expect(waitlistBody).toContain('Ваша позиция: 1');
   const link = (await body((await messages(a))[0]!.ID)).match(
-    /http:\/\/localhost:5173\/t\/[A-Za-z0-9_-]{43}/,
+    /http:\/\/localhost:5174\/t\/[A-Za-z0-9_-]{43}/,
   )?.[0];
   expect(link).toBeDefined();
   await page.goto(link!);
@@ -55,7 +55,7 @@ test('cancellation promotes the first person in the waitlist and emails both peo
     (await body((await messages(a))[0]!.ID)) + (await body((await messages(a))[1]!.ID)),
   ).toContain('Ваш отказ');
   const bodies = await Promise.all((await messages(b)).map((message) => body(message.ID)));
-  const ticketLink = bodies.join('\n').match(/http:\/\/localhost:5173\/t\/[A-Za-z0-9_-]{43}/)?.[0];
+  const ticketLink = bodies.join('\n').match(/http:\/\/localhost:5174\/t\/[A-Za-z0-9_-]{43}/)?.[0];
   expect(ticketLink).toBeDefined();
   await page.goto(ticketLink!);
   await expect(page.getByText(/^[0-9A-HJKMNP-TV-Z]{4}-[0-9A-HJKMNP-TV-Z]{4}$/)).toBeVisible();

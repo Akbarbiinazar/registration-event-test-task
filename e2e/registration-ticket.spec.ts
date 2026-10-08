@@ -37,7 +37,7 @@ test('registration email opens a ticket and mixed-case retry sends no second ema
   const detail = await request.get(`http://127.0.0.1:8025/api/v1/message/${mail!.ID}`);
   expect(detail.ok()).toBe(true);
   const body: { Text: string } = await detail.json();
-  const link = body.Text.match(/http:\/\/localhost:5173\/t\/[A-Za-z0-9_-]{43}/)?.[0];
+  const link = body.Text.match(/http:\/\/localhost:5174\/t\/[A-Za-z0-9_-]{43}/)?.[0];
   expect(link).toBeDefined();
   await page.goto(link!);
   await expect(page.getByRole('heading', { name: /Билет на/ })).toBeVisible();

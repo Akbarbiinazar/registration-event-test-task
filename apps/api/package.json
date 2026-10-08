@@ -10,6 +10,7 @@
     "typecheck": "tsc --noEmit",
     "migrate": "tsx --env-file-if-exists=../../.env src/migrate.ts",
     "seed": "tsx --env-file-if-exists=../../.env src/seed.ts",
+    "db:reset:dev": "tsx --env-file-if-exists=../../.env src/reset-dev.ts",
     "test": "vitest run",
     "test:proofs": "vitest run test/proofs --passWithNoTests"
   },

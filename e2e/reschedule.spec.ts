@@ -1,6 +1,8 @@
 import { randomUUID } from 'node:crypto';
 import { expect, test } from '@playwright/test';
 
+test.use({ timezoneId: 'Asia/Bishkek' });
+
 interface MailpitList {
   messages: { ID: string; To: { Address: string }[] }[];
 }

@@ -38,4 +38,5 @@ export interface Ticket {
   event: { id: string; title: string; startsAtLabel: string };
   status: 'confirmed' | 'waitlisted' | 'cancelled';
   code?: string;
+  position?: number;
 }

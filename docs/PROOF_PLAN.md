@@ -182,3 +182,6 @@
 | 03 | Отправщик: успех, backoff, `Message-ID`, параллельные тики | `apps/api/test/mailer.test.ts` | 3 passed (2026-10-08 16:46) |
 | 03 | Регистрация в UI → письмо Mailpit → билет; повтор без второго письма | `e2e/registration-ticket.spec.ts` | Зелёный, `npm run test:e2e`: 5 passed (2026-10-08 16:55) |
 | 03 | Реальная SMTP-доставка из API в Mailpit | `bash scripts/smoke.sh` | Письмо найдено через API Mailpit (2026-10-08 16:56) |
+| 04 | P2: FIFO-повышение, письмо ожидающему и билет повышенному; два одновременных отказа | `apps/api/test/proofs/p2-waitlist.proof.test.ts`, `assertInvariants()` | Сначала красный: письмо `waitlisted` отсутствовало; затем 2 passed (2026-10-08 17:17) |
+| 04 | Отказ ожидающего, идемпотентность, новая регистрация после отказа, отказ после начала и запрет отказа после чекина | `apps/api/test/registrations.test.ts` | 7 passed вместе с тестами слайса 03; `npm run check` — 56 passed (2026-10-08 17:17) |
+| 04 | Отказ по ссылке из письма → письма A и B в Mailpit → билет B в UI | `e2e/waitlist-cancellation.spec.ts` | `npm run test:e2e` — 6 passed, включая новый сценарий (2026-10-08 17:16) |

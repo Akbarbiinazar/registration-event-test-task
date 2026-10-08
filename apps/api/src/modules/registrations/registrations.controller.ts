@@ -22,7 +22,9 @@ const TicketResponse = Type.Object({
     Type.Literal('cancelled'),
   ]),
   code: Type.Optional(Type.String()),
+  position: Type.Optional(Type.Integer({ minimum: 1 })),
 });
+const CancelResponse = Type.Object({ status: Type.Literal('cancelled') });
 
 export function registerRegistrationRoutes(deps: Deps): FastifyPluginAsync {
   const service = new RegistrationsService(
@@ -50,6 +52,11 @@ export function registerRegistrationRoutes(deps: Deps): FastifyPluginAsync {
       '/tickets/:manageToken',
       { schema: { params: TicketParams, response: { 200: TicketResponse } } },
       (req) => service.ticket(req.params.manageToken),
+    );
+    app.delete<{ Params: Static<typeof TicketParams> }>(
+      '/tickets/:manageToken',
+      { schema: { params: TicketParams, response: { 200: CancelResponse } } },
+      (req) => service.cancel(req.params.manageToken),
     );
   };
 }

@@ -1,4 +1,4 @@
-import { apiGet, apiPost } from '@/shared/api/client';
+import { apiDelete, apiGet, apiPost } from '@/shared/api/client';
 import type {
   CreatedEvent,
   CreateEventInput,
@@ -18,3 +18,5 @@ export const registerForEvent = (id: string, email: string) =>
   apiPost<RegistrationResult>(`/events/${id}/registrations`, { email });
 export const fetchTicket = (token: string, signal?: AbortSignal) =>
   apiGet<Ticket>(`/tickets/${token}`, signal);
+export const cancelTicket = (token: string) =>
+  apiDelete<{ status: 'cancelled' }>(`/tickets/${token}`);

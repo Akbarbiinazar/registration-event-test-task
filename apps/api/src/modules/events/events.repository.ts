@@ -1,4 +1,5 @@
 import type { Db } from '../../db.js';
+import type pg from 'pg';
 
 export interface EventRow {
   id: string;
@@ -33,6 +34,94 @@ export interface EventStats {
 
 export class EventsRepository {
   constructor(private readonly db: Db) {}
+
+  async transaction<T>(work: (client: pg.PoolClient) => Promise<T>): Promise<T> {
+    const client = await this.db.connect();
+    try {
+      await client.query('BEGIN');
+      const result = await work(client);
+      await client.query('COMMIT');
+      return result;
+    } catch (error) {
+      await client.query('ROLLBACK');
+      throw error;
+    } finally {
+      client.release();
+    }
+  }
+
+  async lockForUpdate(
+    client: pg.PoolClient,
+    id: string,
+  ): Promise<(EventRow & { schedule_version: number }) | undefined> {
+    const { rows } = await client.query<EventRow & { schedule_version: number }>(
+      `SELECT ${COLUMNS}, schedule_version FROM events WHERE id = $1 FOR UPDATE`,
+      [id],
+    );
+    return rows[0];
+  }
+
+  async updateMetadata(
+    client: pg.PoolClient,
+    id: string,
+    title: string | undefined,
+    description: string | undefined,
+    now: Date,
+  ): Promise<void> {
+    await client.query(
+      `UPDATE events SET title = COALESCE($2, title), description = COALESCE($3, description), updated_at = $4 WHERE id = $1`,
+      [id, title ?? null, description ?? null, now],
+    );
+  }
+
+  async reschedule(client: pg.PoolClient, id: string, startsAt: Date, now: Date): Promise<number> {
+    const { rows } = await client.query<{ schedule_version: number }>(
+      `UPDATE events SET starts_at = $2, schedule_version = schedule_version + 1, updated_at = $3 WHERE id = $1 RETURNING schedule_version`,
+      [id, startsAt, now],
+    );
+    return rows[0]!.schedule_version;
+  }
+
+  async queueRescheduled(
+    client: pg.PoolClient,
+    input: {
+      id: string;
+      email: string;
+      scheduleVersion: number;
+      subject: string;
+      body: string;
+      now: Date;
+    },
+  ): Promise<void> {
+    await client.query(
+      `INSERT INTO outbox_emails (dedup_key, kind, registration_id, to_email, subject, body_text, schedule_version, created_at, next_attempt_at)
+       VALUES ($1, 'rescheduled', $2, $3, $4, $5, $6, $7, $7) ON CONFLICT (dedup_key) DO NOTHING`,
+      [
+        `rescheduled:${input.id}:${input.scheduleVersion}`,
+        input.id,
+        input.email,
+        input.subject,
+        input.body,
+        input.scheduleVersion,
+        input.now,
+      ],
+    );
+  }
+
+  async activeRegistrations(
+    client: pg.PoolClient,
+    eventId: string,
+  ): Promise<{ id: string; email: string; status: string }[]> {
+    const { rows } = await client.query<{ id: string; email: string; status: string }>(
+      `SELECT id, email, status FROM registrations WHERE event_id = $1 AND status IN ('confirmed', 'waitlisted')`,
+      [eventId],
+    );
+    return rows;
+  }
+
+  async notify(client: pg.PoolClient, eventId: string): Promise<void> {
+    await client.query("SELECT pg_notify('event_stats', $1)", [eventId]);
+  }
 
   async insert(e: NewEvent): Promise<EventRow> {
     const { rows } = await this.db.query<EventRow>(

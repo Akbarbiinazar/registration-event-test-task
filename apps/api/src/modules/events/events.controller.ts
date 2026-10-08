@@ -34,6 +34,19 @@ type CreateEventBody = Static<typeof CreateEventBody>;
 
 // Not format: 'uuid' - a malformed id is simply an event that does not exist (404, not 400).
 const IdParams = Type.Object({ id: Type.String() });
+const UpdateEventBody = Type.Object(
+  {
+    startsAt: Type.Optional(
+      Type.String({
+        pattern: '^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}(:\\d{2}(\\.\\d+)?)?(Z|[+-]\\d{2}:\\d{2})$',
+      }),
+    ),
+    title: Type.Optional(Type.String({ minLength: 1, maxLength: 200, pattern: '\\S' })),
+    description: Type.Optional(Type.String({ maxLength: 10000 })),
+  },
+  { additionalProperties: false, minProperties: 1 },
+);
+type UpdateEventBody = Static<typeof UpdateEventBody>;
 
 export function registerEventsRoutes({ db, clock, config }: Deps): FastifyPluginAsync {
   const service = new EventsService(new EventsRepository(db), clock);
@@ -70,6 +83,18 @@ export function registerEventsRoutes({ db, clock, config }: Deps): FastifyPlugin
       '/organizer/events/:id',
       { schema: { params: IdParams } },
       (req) => service.getForOrganizer(req.params.id, req.headers.authorization),
+    );
+
+    app.patch<{ Params: Static<typeof IdParams>; Body: UpdateEventBody }>(
+      '/organizer/events/:id',
+      {
+        schema: {
+          params: IdParams,
+          body: UpdateEventBody,
+          response: { 200: Type.Object({ unchanged: Type.Optional(Type.Boolean()) }) },
+        },
+      },
+      (req) => service.updateForOrganizer(req.params.id, req.headers.authorization, req.body),
     );
 
     app.get<{ Params: Static<typeof IdParams>; Querystring: { key?: string } }>(

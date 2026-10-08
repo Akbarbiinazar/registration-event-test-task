@@ -24,6 +24,12 @@ export interface CreateEventInput {
   capacity: number;
 }
 
+export interface UpdateEventInput {
+  startsAt?: string;
+  title?: string;
+  description?: string;
+}
+
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const sha256 = (value: string): Buffer => createHash('sha256').update(value).digest();
 
@@ -82,6 +88,44 @@ export class EventsService {
 
   async stats(id: string) {
     return this.repository.stats(id);
+  }
+
+  async updateForOrganizer(
+    id: string,
+    authorization: string | undefined,
+    input: UpdateEventInput,
+  ): Promise<{ unchanged?: true }> {
+    await this.authorize(id, authorization);
+    const now = this.clock.now();
+    const startsAt = input.startsAt === undefined ? undefined : new Date(input.startsAt);
+    if (startsAt && Number.isNaN(startsAt.getTime()))
+      throw new AppError(400, 'validation_error', 'Укажите корректную дату начала');
+    if (startsAt && startsAt.getTime() <= now.getTime())
+      throw new AppError(400, 'validation_error', 'Нельзя перенести на прошедшее время');
+    return this.repository.transaction(async (client) => {
+      const event = await this.repository.lockForUpdate(client, id);
+      if (!event) throw new AppError(401, 'unauthorized', 'Нужна ссылка организатора');
+      await this.repository.updateMetadata(client, id, input.title?.trim(), input.description, now);
+      if (startsAt && startsAt.getTime() === event.starts_at.getTime()) return { unchanged: true };
+      if (startsAt) {
+        const scheduleVersion = await this.repository.reschedule(client, id, startsAt, now);
+        for (const registration of await this.repository.activeRegistrations(client, id)) {
+          const waitlisted = registration.status === 'waitlisted';
+          await this.repository.queueRescheduled(client, {
+            id: registration.id,
+            email: registration.email,
+            scheduleVersion,
+            subject: `Перенос события «${event.title}»`,
+            body: waitlisted
+              ? `Событие «${event.title}» перенесено. Ваша запись в листе ожидания сохранена.\nБыло: ${formatInZone(event.starts_at, event.timezone)}\nСтало: ${formatInZone(startsAt, event.timezone)}\n`
+              : `Событие «${event.title}» перенесено.\nБыло: ${formatInZone(event.starts_at, event.timezone)}\nСтало: ${formatInZone(startsAt, event.timezone)}\n`,
+            now,
+          });
+        }
+        await this.repository.notify(client, id);
+      }
+      return {};
+    });
   }
 
   private async authorize(id: string, authorization: string | undefined): Promise<EventRow> {

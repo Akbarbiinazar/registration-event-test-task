@@ -47,3 +47,14 @@ export function apiPost<T>(path: string, body: unknown, bearer?: string): Promis
 export function apiDelete<T>(path: string): Promise<T> {
   return request<T>(path, { method: 'DELETE' });
 }
+
+export function apiPatch<T>(path: string, body: unknown, bearer?: string): Promise<T> {
+  return request<T>(path, {
+    method: 'PATCH',
+    headers: {
+      'Content-Type': 'application/json',
+      ...(bearer ? { Authorization: `Bearer ${bearer}` } : {}),
+    },
+    body: JSON.stringify(body),
+  });
+}

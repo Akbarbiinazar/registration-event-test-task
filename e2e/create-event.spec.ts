@@ -24,7 +24,10 @@ test('organizer creates an event; public and organizer pages show the same time'
   const org = await context.newPage();
   await org.goto(organizerUrl as string);
   await expect(org.getByText('18:00')).toBeVisible();
-  await expect(org.getByText('Зарегистрировано: 0 из 3')).toBeVisible();
+  await expect(org.getByRole('listitem').filter({ hasText: 'Зарегистрировано' })).toContainText(
+    '0',
+  );
+  await expect(org.getByRole('listitem').filter({ hasText: 'Мест осталось' })).toContainText('3');
 });
 
 test('invalid form shows the API message', async ({ page }) => {

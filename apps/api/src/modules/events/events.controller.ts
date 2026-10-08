@@ -3,6 +3,7 @@ import { Type, type Static } from '@sinclair/typebox';
 import type { Deps } from '../../app.js';
 import { EventsRepository } from './events.repository.js';
 import { EventsService } from './events.service.js';
+import { EventNotifier } from '../../live/notifier.js';
 
 const PublicEventSchema = Type.Object({
   id: Type.String(),
@@ -34,10 +35,14 @@ type CreateEventBody = Static<typeof CreateEventBody>;
 // Not format: 'uuid' - a malformed id is simply an event that does not exist (404, not 400).
 const IdParams = Type.Object({ id: Type.String() });
 
-export function registerEventsRoutes({ db, clock }: Deps): FastifyPluginAsync {
+export function registerEventsRoutes({ db, clock, config }: Deps): FastifyPluginAsync {
   const service = new EventsService(new EventsRepository(db), clock);
+  const notifier = new EventNotifier(
+    config.NODE_ENV === 'test' ? config.TEST_DATABASE_URL : config.DATABASE_URL,
+  );
 
   return async (app) => {
+    app.addHook('onClose', () => notifier.stop());
     app.post<{ Body: CreateEventBody }>(
       '/events',
       {
@@ -65,6 +70,55 @@ export function registerEventsRoutes({ db, clock }: Deps): FastifyPluginAsync {
       '/organizer/events/:id',
       { schema: { params: IdParams } },
       (req) => service.getForOrganizer(req.params.id, req.headers.authorization),
+    );
+
+    app.get<{ Params: Static<typeof IdParams>; Querystring: { key?: string } }>(
+      '/organizer/events/:id/stream',
+      {
+        // Default request logs include the URL, which carries the organizer key here.
+        logLevel: 'silent',
+        schema: {
+          params: IdParams,
+          querystring: Type.Object({ key: Type.Optional(Type.String()) }),
+        },
+      },
+      async (req, reply) => {
+        const { id } = req.params;
+        await service.statsForOrganizer(id, req.query.key);
+        await notifier.start();
+        reply.hijack();
+        const response = reply.raw;
+        response.writeHead(200, {
+          'Content-Type': 'text/event-stream; charset=utf-8',
+          'Cache-Control': 'no-cache, no-transform',
+          Connection: 'keep-alive',
+          'X-Accel-Buffering': 'no',
+          'Referrer-Policy': 'no-referrer',
+        });
+        let closed = false;
+        let pending = Promise.resolve();
+        const send = (stats: Awaited<ReturnType<typeof service.stats>>) => {
+          if (!closed) response.write(`data: ${JSON.stringify(stats)}\n\n`);
+        };
+        const onChange = () => {
+          pending = pending
+            .then(async () => send(await service.stats(id)))
+            .catch((error: unknown) => {
+              app.log.error({ error, eventId: id }, 'failed to send event stats');
+            });
+        };
+        const unsubscribe = notifier.subscribe(id, onChange);
+        // Subscribe before reading, so a concurrent commit cannot be missed.
+        onChange();
+        const heartbeat = setInterval(() => {
+          if (!closed) response.write(': heartbeat\n\n');
+        }, 15000);
+        response.on('close', () => {
+          closed = true;
+          clearInterval(heartbeat);
+          unsubscribe();
+        });
+      },
     );
   };
 }

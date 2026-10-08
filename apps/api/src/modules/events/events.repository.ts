@@ -24,6 +24,13 @@ export interface NewEvent {
   now: Date;
 }
 
+export interface EventStats {
+  registered: number;
+  waitlisted: number;
+  checkedIn: number;
+  capacity: number;
+}
+
 export class EventsRepository {
   constructor(private readonly db: Db) {}
 
@@ -50,5 +57,30 @@ export class EventsRepository {
       [now],
     );
     return rows;
+  }
+
+  async stats(id: string): Promise<EventStats> {
+    const { rows } = await this.db.query<{
+      registered: string;
+      waitlisted: string;
+      checked_in: string;
+      capacity: number;
+    }>(
+      `SELECT e.capacity,
+              count(r.id) FILTER (WHERE r.status = 'confirmed') AS registered,
+              count(r.id) FILTER (WHERE r.status = 'waitlisted') AS waitlisted,
+              count(r.id) FILTER (WHERE r.checked_in_at IS NOT NULL) AS checked_in
+       FROM events e LEFT JOIN registrations r ON r.event_id = e.id
+       WHERE e.id = $1 GROUP BY e.id`,
+      [id],
+    );
+    const row = rows[0];
+    if (!row) throw new Error('Authorized event disappeared');
+    return {
+      registered: Number(row.registered),
+      waitlisted: Number(row.waitlisted),
+      checkedIn: Number(row.checked_in),
+      capacity: row.capacity,
+    };
   }
 }

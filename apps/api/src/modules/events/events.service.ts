@@ -71,6 +71,20 @@ export class EventsService {
 
   /** Same 401 for missing event, missing key and wrong key: nothing leaks about existence. */
   async getForOrganizer(id: string, authorization: string | undefined) {
+    const row = await this.authorize(id, authorization);
+    return { event: this.toPublic(row), stats: await this.repository.stats(row.id) };
+  }
+
+  async statsForOrganizer(id: string, key: string | undefined) {
+    const row = await this.authorize(id, key ? `Bearer ${key}` : undefined);
+    return this.repository.stats(row.id);
+  }
+
+  async stats(id: string) {
+    return this.repository.stats(id);
+  }
+
+  private async authorize(id: string, authorization: string | undefined): Promise<EventRow> {
     const row = await this.findExisting(id);
     const key = authorization?.match(/^Bearer (.+)$/i)?.[1];
     const expected = Buffer.from(row?.organizer_token_hash ?? '0'.repeat(64), 'hex');
@@ -78,10 +92,7 @@ export class EventsService {
     if (!row || !keyMatches) {
       throw new AppError(401, 'unauthorized', 'Нужна ссылка организатора');
     }
-    return {
-      event: this.toPublic(row),
-      stats: { registered: 0, waitlisted: 0, checkedIn: 0, capacity: row.capacity },
-    };
+    return row;
   }
 
   /** A malformed id is an event that does not exist; it never reaches the uuid column. */

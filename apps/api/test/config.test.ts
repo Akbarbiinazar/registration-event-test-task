@@ -6,6 +6,11 @@ describe('loadConfig', () => {
     const config = loadConfig({});
     expect(config.PORT).toBe(3000);
     expect(config.DATABASE_URL).toMatch(/^postgres:\/\//);
+    expect(config.REMINDER_TICK_MS).toBe(60_000);
+  });
+
+  it('reads a numeric REMINDER_TICK_MS override', () => {
+    expect(loadConfig({ REMINDER_TICK_MS: '10000' }).REMINDER_TICK_MS).toBe(10_000);
   });
 
   it('rejects an invalid PORT and a non-postgres DATABASE_URL, listing both', () => {

@@ -32,6 +32,44 @@ afterEach(async () => app.close());
 const deps = { db: testPool, clock, mailFrom: 'tickets@events.local' };
 
 describe('mailer outbox', () => {
+  it.each(['rescheduled event', 'cancelled registration'])(
+    'marks a reminder for a %s as skipped without sending it',
+    async (staleReason) => {
+      const { rows } = await testPool.query<{ id: string; manage_token: string }>(
+        `SELECT r.id, r.manage_token FROM registrations r
+         JOIN outbox_emails o ON o.registration_id = r.id
+         WHERE o.kind = 'ticket'`,
+      );
+      const registration = rows[0]!;
+      await testPool.query(
+        `UPDATE outbox_emails SET kind = 'reminder', schedule_version = 1
+         WHERE registration_id = $1`,
+        [registration.id],
+      );
+      if (staleReason === 'rescheduled event') {
+        await testPool.query('UPDATE events SET schedule_version = 2');
+      } else {
+        await app.inject({ method: 'DELETE', url: `/api/tickets/${registration.manage_token}` });
+        await testPool.query(
+          `UPDATE outbox_emails SET sent_at = $1
+           WHERE registration_id = $2 AND kind <> 'reminder'`,
+          [clock.now(), registration.id],
+        );
+      }
+
+      const sent: MailMessage[] = [];
+      const transport = { send: async (message: MailMessage) => void sent.push(message) };
+      expect(await runMailerTick(deps, transport)).toBe(1);
+      expect(sent).toHaveLength(0);
+      const { rows: reminders } = await testPool.query<{ marked_at: Date | null }>(
+        `SELECT skipped_at AS marked_at FROM outbox_emails
+         WHERE registration_id = $1 AND kind = 'reminder'`,
+        [registration.id],
+      );
+      expect(reminders[0]?.marked_at).toEqual(clock.now());
+    },
+  );
+
   it('sends due mail once with a deterministic Message-ID', async () => {
     const sent: MailMessage[] = [];
     const transport = {

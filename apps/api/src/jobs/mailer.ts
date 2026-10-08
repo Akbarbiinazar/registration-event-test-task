@@ -18,8 +18,6 @@ interface DueEmail {
   dedup_key: string;
   kind: string;
   schedule_version: number | null;
-  event_schedule_version: number;
-  registration_status: string;
   to_email: string;
   subject: string;
   body_text: string;
@@ -39,27 +37,38 @@ export async function runMailerTick(
   const client = await deps.db.connect();
   try {
     await client.query('BEGIN');
+    const skipped = await client.query(
+      `WITH stale_due AS MATERIALIZED (
+         SELECT o.id
+         FROM outbox_emails o
+         JOIN registrations r ON r.id = o.registration_id
+         JOIN events e ON e.id = r.event_id
+         WHERE o.kind = 'reminder' AND o.sent_at IS NULL AND o.skipped_at IS NULL
+           AND o.next_attempt_at <= $1
+           AND (o.schedule_version IS DISTINCT FROM e.schedule_version
+             OR r.status <> 'confirmed')
+         ORDER BY o.next_attempt_at, o.id
+         LIMIT 10 FOR UPDATE OF o SKIP LOCKED
+       )
+       UPDATE outbox_emails o SET skipped_at = $1
+       FROM stale_due WHERE o.id = stale_due.id
+       RETURNING o.id`,
+      [now],
+    );
     const { rows } = await client.query<DueEmail>(
       `SELECT o.id, o.dedup_key, o.kind, o.schedule_version,
-              e.schedule_version AS event_schedule_version, r.status AS registration_status,
               o.to_email, o.subject, o.body_text, o.attempts
        FROM outbox_emails o
        JOIN registrations r ON r.id = o.registration_id
        JOIN events e ON e.id = r.event_id
        WHERE o.sent_at IS NULL AND o.skipped_at IS NULL AND o.next_attempt_at <= $1
+         AND (o.kind <> 'reminder'
+           OR (o.schedule_version = e.schedule_version AND r.status = 'confirmed'))
        ORDER BY o.next_attempt_at, o.id
        LIMIT 10 FOR UPDATE OF o SKIP LOCKED`,
       [now],
     );
     for (const row of rows) {
-      if (
-        row.kind === 'reminder' &&
-        (row.schedule_version !== row.event_schedule_version ||
-          row.registration_status !== 'confirmed')
-      ) {
-        await client.query('UPDATE outbox_emails SET skipped_at = $2 WHERE id = $1', [row.id, now]);
-        continue;
-      }
       try {
         await transport.send({
           from: deps.mailFrom,
@@ -83,7 +92,7 @@ export async function runMailerTick(
       }
     }
     await client.query('COMMIT');
-    return rows.length;
+    return (skipped.rowCount ?? 0) + rows.length;
   } catch (error) {
     await client.query('ROLLBACK');
     throw error;

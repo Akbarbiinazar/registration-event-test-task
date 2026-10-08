@@ -21,6 +21,7 @@ const ConfigSchema = Type.Object({
   SMTP_PORT: Type.Integer({ minimum: 1, maximum: 65535, default: 1025 }),
   MAIL_FROM: Type.String({ minLength: 1, default: 'Билеты <tickets@events.local>' }),
   MAILER_TICK_MS: Type.Integer({ minimum: 100, default: 1000 }),
+  REMINDER_TICK_MS: Type.Integer({ minimum: 100, default: 60_000 }),
 });
 
 export type Config = Static<typeof ConfigSchema>;
@@ -34,7 +35,12 @@ export function loadConfig(env: Record<string, string | undefined> = process.env
     const value = env[key];
     if (value === undefined || value === '') continue;
     raw[key] =
-      key === 'PORT' || key === 'SMTP_PORT' || key === 'MAILER_TICK_MS' ? Number(value) : value;
+      key === 'PORT' ||
+      key === 'SMTP_PORT' ||
+      key === 'MAILER_TICK_MS' ||
+      key === 'REMINDER_TICK_MS'
+        ? Number(value)
+        : value;
   }
   const withDefaults = Value.Default(ConfigSchema, raw);
   const errors = [...Value.Errors(ConfigSchema, withDefaults)];

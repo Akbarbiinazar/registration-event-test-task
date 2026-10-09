@@ -96,7 +96,9 @@ Mailpit UI: http://localhost:8025. Postgres на хосте: порт `5433`.
 @project_spec.md
 - One vertical slice at a time (DB + API + UI + test). Stop after each for review.
 - Follow the folder layout and layering exactly: controller -> service -> repository; web features import only shared/ or themselves.
-- Define the contract (packages/contracts) before implementing either side.
+- Define the API contract before implementing either side. The current project
+  uses separate API and web types, without `packages/contracts` (spec §1;
+  DEVLOG current state T6).
 - Validate all input at the API boundary. Return the common error shape.
 - Never invent requirements. If acceptance criteria are missing in project_spec, ask.
 - Each slice has a row in PROOF_PLAN (criterion, how proven, result). Fill it only with results you actually ran; never mark a criterion proven without evidence.
